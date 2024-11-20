@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Integration Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .quiz-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            padding-top: 60px; /* Make space for the sticky score */
+        }
+        .score-container {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            padding: 10px 20px;
+            border-bottom: 1px solid #eee;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .option:hover:not(.correct):not(.incorrect) {
+            background-color: #f0f0f0;
+        }
+        .correct {
+            background-color: #90EE90;
+            pointer-events: none;
+        }
+        .incorrect {
+            background-color: #FFB6C1;
+            pointer-events: none;
+        }
+        #score {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .progress {
+            font-size: 1em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="score-container">
+            <div id="score">Score: 0/0 (0%)</div>
+            <div class="progress">Questions answered: <span id="progress">0/0</span></div>
+        </div>
+        <h1>Data Integration Quiz</h1>
+        <div id="quiz"></div>
+    </div>
+
+    <script> 
+        const quizData = [
+        {
+            question: "Which of the following similarity scores is most commonly used to evaluate the similarity between two text documents in a Bag-of-Words model?",
+            options: [
+                "Cosine Similarity",
+                "Euclidean Distance",
+                "Manhattan Distance", 
+                "Pearson Correlation",
+                "Jaccard Similarity"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what is the main goal of supervised learning in machine learning?",
+            options: [
+                "To learn a mapping from input to output using labeled data",
+                "To discover hidden patterns in data without labels",
+                "To cluster data into groups based on similarity",
+                "To generate synthetic data points"
+            ],
+            correct: 0
+        },
+        {
+            question: "Which of the following best describes how a 'confusion matrix' is used to evaluate a machine learning classification model?",
+            options: [
+                "A confusion matrix is a table that summarizes the performance of a classification model by comparing predicted labels with actual labels across classes",
+                "A confusion matrix is used in regression models to calculate the error between predicted and actual values",
+                "A confusion matrix evaluates unsupervised learning algorithms by grouping similar data points",
+                "A confusion matrix is a visualization tool used to identify clusters in an unlabeled dataset",
+                "A confusion matrix displays the probability distribution of each class, helping to tune hyperparameters"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is a primary reason K-Means clustering might struggle when dealing with real-world data?",
+            options: [
+                "It is sensitive to outliers, which can distort the positions of the cluster centroids",
+                "It can only form elongated clusters sensitive to noise",
+                "It uses medoids, making it immune to noise",
+                "It always requires a hierarchical approach",
+                "It automatically separates outliers into distinct clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Embeddings, which of the following processes is used in data normalization to convert words into their base or root form, often using grammar rules and a dictionary?",
+            options: [
+                "Lemmatization",
+                "Stop word removal",
+                "Stemming",
+                "Tokenization",
+                "Vectorization"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what is the main benefit of using embeddings instead of one-hot encoding for representing categorical data in machine learning models?",
+            options: [
+                "Embeddings reduce the dimensionality of the input data while preserving semantic relationships",
+                "Embeddings allow for faster model training compared to one-hot encoding",
+                "Embeddings eliminate the need for feature engineering",
+                "Embeddings automatically handle missing data in the input",
+                "Embeddings enable models to work with continuous variables only"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what is a key characteristic of Ward's method in hierarchical clustering?",
+            options: [
+                "It merges clusters based on the increase in squared error when two clusters are combined",
+                "It merges clusters based on the minimum distance between any two points in each cluster",
+                "It merges clusters based on maximizing the average distance between all points in each cluster",
+                "It focuses on creating clusters with equal numbers of data points",
+                "It is designed to be highly susceptible to noise and outliers"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what is the main objective of a K-means clustering algorithm?",
+            options: [
+                "Minimize the sum of squared distances between each data point and the centroid of its assigned cluster",
+                "Maximize the distance between each data point and the centroid of its assigned cluster",
+                "Minimize the distance between each centroid in different clusters",
+                "Divide data points so that each cluster contains exactly the same number of data points",
+                "Ensure that each data point belongs to multiple clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, which metric best represents cluster cohesion in the context of clustering analysis?",
+            options: [
+                "Within-cluster sum of squares (WSS)",
+                "Between-cluster sum of squares (BSS)",
+                "Inter-cluster density",
+                "Silhouette score",
+                "Mean Euclidean distance between clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on unsupervised learning, which of the following statements about K-Means clustering is FALSE?",
+            options: [
+                "It is not sensitive to outliers",
+                "It is an example of unsupervised learning",
+                "It aims to minimize the within-cluster sum of squares",
+                "It requires the number of clusters (K) to be specified in advance",
+                "It can be used to initialize other clustering algorithms like Ward's method"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which of the following is NOT one of the three main types of cluster validity measures discussed?",
+            options: [
+                "Predictive validity measures",
+                "External validity measures",
+                "Internal validity measures",
+                "Relative validity measures",
+                "Clustering tendency measures"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture 12, Which among these does not belong to the basic idea of Locally Sensitive Hashing (LSH)?",
+            options: [
+                "Increasing the size of labeled training sets by applying class-preserving transformations to create copies of labeled data points",
+                "Choose random projection vectors to separate the feature space into projection vectors",
+                "For each point, we know if a point lies above or below the project vector",
+                "We put items in the several (overlapping) buckets",
+                "The difference in the bits correlates with the cosine distance"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Unsupervised learning, which of the following statements is incorrect about AGNES (Agglomerative Nesting)?",
+            options: [
+                "Eventually each node forms a cluster on its own",
+                "Implemented in statistical packages, e.g., Splus",
+                "Merge nodes that have the least dissimilarity",
+                "Goes on in a non-descending fashion",
+                "Use the single-link method and the dissimilarity matrix"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to ML Lecture 4, What is the function of a proximity matrix in hierarchical clustering?",
+            options: [
+                "Measuring distances between all points in clusters",
+                "Reducing the number of clusters",
+                "Determining the shape of each cluster",
+                "Simplifying the K-means algorithm",
+                "Ensuring clusters are of equal size"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to ML lecture 4, in hierarchical clustering, what does cutting a dendrogram at a specific level produce?",
+            options: [
+                "A clustering of the data objects",
+                "A new distance matrix",
+                "The centroid of each cluster",
+                "The silhouette coefficient",
+                "The cluster cohesion measure"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what does the 'Eps' parameter represent in DBSCAN?",
+            options: [
+                "The maximum distance between two samples for one to be considered as in the neighborhood of the other",
+                "The minimum number of points required to form a dense region",
+                "The number of clusters to be formed",
+                "The maximum number of iterations allowed"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which of the following correctly describes 'entropy' in the context of clustering validity?",
+            options: [
+                "It indicates the degree of randomness within cluster assignments",
+                "It measures the cohesion of points within a single cluster",
+                "It defines the boundary length between clusters",
+                "It calculates the minimum distance between two clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, which of the following is a potential limitation of using the Silhouette Coefficient to evaluate clustering on high-dimensional data?",
+            options: [
+                "The Silhouette Coefficient may be unreliable in high-dimensional spaces, as distances between points become less informative, reducing its effectiveness in evaluating cluster cohesion and separation",
+                "The Silhouette Coefficient inherently fails to detect noise, making it unsuitable for data with high variance",
+                "The Silhouette Coefficient is only effective for datasets with categorical features and does not perform well with continuous data",
+                "The Silhouette Coefficient is limited to evaluating K-means clustering and cannot be used with hierarchical clustering methods",
+                "The Silhouette Coefficient depends on outlier removal before calculation, limiting its use in real-world datasets with high-dimensional noise"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what is the significance of a dendrogram in hierarchical clustering?",
+            options: [
+                "It shows the history of merges during the clustering process",
+                "It calculates the distance between clusters",
+                "It is the final step in K-Means algorithm",
+                "It is used to compute the centroids of clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, which of the following best describes a key advantage of using dimensionality reduction techniques like t-SNE or PCA in machine learning pipelines?",
+            options: [
+                "To visualize high-dimensional data in a more interpretable 2D or 3D space",
+                "To improve model accuracy by excluding categorical data types",
+                "To remove noise from datasets by converting them into binary vectors",
+                "To increase the complexity of the model's feature space for better predictions",
+                "To create clusters by focusing on outliers in the data"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture 13 slides, which of the following statements is true about hierarchical clustering methods?",
+            options: [
+                "They do not require a predetermined number of clusters",
+                "They are always computationally faster than k-means",
+                "They are highly sensitive to initial points",
+                "They prioritize circular clusters",
+                "They are unable to handle non-numeric data"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the ML lecture 4 on clustering, which among the following is not a method used for defining Inter-Cluster Similarity?",
+            options: [
+                "Cosine Similarity",
+                "MIN",
+                "MAX", 
+                "Group Average",
+                "Ward's Method"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, What does the 'Ward's method' in hierarchical clustering aim to minimize?",
+            options: [
+                "The total within-cluster variance",
+                "The maximum distance between clusters",
+                "The average distance across all clusters",
+                "It's like assigning patients to the same ward based on how similar they are"
+            ],
+            correct: 0
+        },
+        {
+            question: "In which situation would a cosine similarity measure be more appropriate than Euclidean distance?",
+            options: [
+                "When comparing text embeddings in a high-dimensional space",
+                "When measuring distances in low-dimensional image data",
+                "When identifying outliers in a labeled dataset",
+                "When clustering data points based on geographical locations",
+                "When evaluating model accuracy on a test dataset"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture13 on Unsupervised Learning, which distance measure is particularly suited for comparing the similarity between binary vectors?",
+            options: [
+                "Jaccard similarity",
+                "Euclidean distance",
+                "Cosine similarity",
+                "Manhattan distance",
+                "Minkowski distance"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, which of the following is not required by K-means clustering?",
+            options: [
+                "Labeled data points",
+                "Defined distance metric",
+                "Initial guess as to cluster centroids",
+                "Defined number of clusters",
+                "All of the above"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the slide lecture12-ml-lecture-part2.pdf, what is a key difference between supervised and unsupervised learning as discussed in the lecture?",
+            options: [
+                "Supervised learning uses labeled data, while unsupervised learning finds patterns unlabeled",
+                "Supervised learning requires more computational power than unsupervised learning",
+                "Unsupervised learning is only used for clustering tasks, whereas supervised learning is used for regression",
+                "Supervised learning is always more accurate than unsupervised learning",
+                "Unsupervised learning cannot be used for any real-world applications"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture 14 on Encodings, why are rare terms more informative than frequent terms in document frequency algorithms?",
+            options: [
+                "A document containing the rare term is very likely to be relevant to the query linked to the rare term",
+                "Rare terms often indicate the topic of a document more directly, while frequent terms do not",
+                "Rare terms are easier for algorithms to detect and classify than frequent terms",
+                "Frequent terms are harder to analyze, making rare terms more efficient for processing",
+                "Frequent terms tend to make the algorithms more error-prone, so rare terms are preferable"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the primary difference between Euclidean distance and cosine similarity when used in clustering algorithms?",
+            options: [
+                "Euclidean distance measures absolute distances, while cosine similarity measures angular differences",
+                "Euclidean distance is suitable for binary data, while cosine similarity is not",
+                "Cosine similarity calculates the mean squared error, unlike Euclidean distance",
+                "Cosine similarity is only applicable in two-dimensional spaces, while Euclidean distance works in higher dimensions",
+                "There is no significant difference; both measure the same aspects of data points"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to Lecture 11 on linear regression, the purpose of minimizing ||Xw - y||2 in a linear regression model is to achieve a particular objective. Which of the following best describes this objective?",
+            options: [
+                "To fit a continuous line that closely matches the trends in the data points",
+                "To select the optimal features that contribute most to the model's predictions",
+                "To create a linear boundary that separates classes within the dataset",
+                "To reduce errors specifically in classifying data into correct categories"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the main difference between one-hot encoding and bag-of-words representation, as presented in lecture 14?",
+            options: [
+                "Bag-of-words can represent multiple words, while one-hot encoding represents a single word",
+                "One-hot encoding uses binary values, while bag-of-words uses word frequencies",
+                "Bag-of-words is used for sentences, while one-hot encoding is used for documents",
+                "One-hot encoding preserves word order, while bag-of-words does not",
+                "Bag-of-words requires a fixed vocabulary size, while one-hot encoding does not"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, when using Principal Component Analysis (PCA) before applying a supervised classifier, what is a potential trade-off that may arise?",
+            options: [
+                "PCA may reduce noise in the dataset, but it can also remove some variance associated with informative features, potentially lowering classifier accuracy",
+                "PCA ensures that only the most relevant features are kept, but it increases the dataset's dimensionality, making classification harder",
+                "PCA decreases computational time but is only suitable for binary classification tasks, limiting model applicability",
+                "PCA transforms all features into binary format, which may lead to information loss for continuous data",
+                "PCA automatically improves model accuracy by focusing on majority class samples"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture 14 (Slide 5), which of the following best describes the function of One-Hot Encoding in data processing?",
+            options: [
+                "It transforms categorical variables into binary vectors",
+                "It assigns unique weights based on term frequency",
+                "It removes irrelevant or frequently occurring words",
+                "It compresses data by reducing vector dimensions",
+                "It allows data to go Super Saiyan for increased performance"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture13-ml-lecture-part3-part2, if you calculate the Euclidean distance between two high-dimensional points, the resulting value may be large due to which of the following issues?",
+            options: [
+                "Curse of Dimensionality",
+                "Overfitting",
+                "Underfitting",
+                "Data Leakage"
+            ],
+            correct: 0
+        },
+        {
+            question: "In the context of data engineering and unsupervised learning, which measure would be most appropriate for comparing similarity of short strings with varying lengths, where character order is important and needs to account for typing errors?",
+            options: [
+                "Edit distance (Levenshtein distance), as it accounts for insertions, deletions, and substitutions",
+                "Jaccard similarity, because it effectively compares sets of characters regardless of their order",
+                "Euclidean distance, as it provides a precise measure of difference in multi-dimensional space",
+                "Cosine similarity, since it focuses on the angle between vector representations of the strings",
+                "None of the above, as string comparison requires a specialized algorithm not mentioned here"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on supervised classification, which of the following best captures the difference between logistic regression and linear regression?",
+            options: [
+                "Logistic regression is typically used for binary classification, whereas linear regression is used for regression tasks",
+                "Logistic regression can model continuous outcomes more effectively than linear regression",
+                "Logistic regression outputs a probability score bounded between 0 and 1, unlike linear regression",
+                "Logistic regression does not rely on any statistical assumptions regarding the predictors"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which of the following is a major limitation of using bag-of-words (BoW) for text representation, particularly when compared to TF-IDF?",
+            options: [
+                "Bag-of-words treats each word as an independent feature, which can overlook the importance of infrequent yet meaningful terms in specific contexts",
+                "Bag-of-words requires extensive linguistic preprocessing, making it more computationally expensive than TF-IDF",
+                "Bag-of-words relies heavily on part-of-speech tagging, which limits its application across multiple languages",
+                "Bag-of-words has higher computational complexity due to its inability to reduce the number of unique terms across documents",
+                "Bag-of-words frequently leads to overfitting because it inherently captures the grammatical structure of each sentence"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to ML Lecture 4 on hierarchical clustering, What does AGNES (Agglomerative Nesting) do in hierarchical clustering?",
+            options: [
+                "Merges nodes with the least dissimilarity first",
+                "Divides clusters into smaller sub-clusters",
+                "Merges nodes with the largest dissimilarity first",
+                "Uses centroids to partition data",
+                "Randomly assigns points to clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "In which of the following tasks is using co-occurrence analysis the best choice?",
+            options: [
+                "Identifying common themes or topics in an article",
+                "Generating a syntactic structure tree for a text",
+                "Automatically detecting and correcting spelling errors",
+                "Locating precise answers in a question-answering system",
+                "Determining whether a sentence is grammatically correct"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on clustering algorithms, why might DBSCAN be preferred over K-means for clustering geospatial data with uneven density?",
+            options: [
+                "DBSCAN can identify clusters with varying densities and detect outliers, which is helpful for geospatial data",
+                "DBSCAN minimizes the distance between data points and cluster centroids, creating compact clusters",
+                "DBSCAN requires fewer calculations, making it ideal for real-time clustering of high-dimensional data",
+                "DBSCAN is designed to find equal-sized, spherical clusters, optimizing for compactness",
+                "DBSCAN primarily focuses on maximizing cluster separation, ensuring distinct cluster boundaries"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which of the following describes the role of the TF-IDF Vectorizer in data engineering?",
+            options: [
+                "It assigns weights to words based on their importance within a document and across documents",
+                "It removes rare words from the text",
+                "It transforms words into numbers based solely on their position in the text", 
+                "It extracts the main sentiment of the text",
+                "It highlights proper nouns in the text"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture 14, What is the purpose of CountVectorizer in the Bag of Words model?",
+            options: [
+                "To convert text documents into a matrix of word frequency counts, representing each unique word as a feature",
+                "To reduce the dimensionality of the text data by combining similar words into a single feature",
+                "To remove all stop words and punctuation from the text corpus before further processing",
+                "To sort the documents based on their relevance to certain keywords",
+                "To perform sentiment analysis on the given corpus of text data"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which of the following correctly identifies the key parameters required for the DBSCAN (Density-Based Spatial Clustering of Applications with Noise) algorithm?",
+            options: [
+                "Eps (epsilon) and MinPts (minimum points)",
+                "Eps (epsilon) and MaxPts (maximum points)",
+                "MinPts (minimum points) and MaxPts (maximum points)",
+                "Eps (epsilon) and ClusterSize",
+                "MinPts (minimum points) and ClusterSize"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the purpose of the Bag-of-Words (BoW) model in NLP?",
+            options: [
+                "To calculate word frequencies",
+                "To represent words as vectors",
+                "To identify syntactic dependencies",
+                "To perform sentiment analysis"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the main difference between stemming and lemmatization in data normalization?",
+            options: [
+                "Stemming is rule-based and simplifies words without context, while lemmatization uses a dictionary for grammar-based transformation to the base form",
+                "Stemming uses a dictionary for word normalization, while lemmatization uses predefined rules",
+                "Stemming is grammar-based and transforms a word to its base form, while lemmatization is rule-based",
+                "Stemming is more accurate than lemmatization in producing base words"
+            ],
+            correct: 0
+        },
+        {
+            question: "In Lecture 13, which of the following describes the primary drawback of using Single Linkage in hierarchical clustering?",
+            options: [
+                "It is prone to chaining, where dissimilar points are linked together through intermediate points",
+                "It tends to break up large clusters due to its variance-focused merging",
+                "It can only be used for clustering categorical data",
+                "It requires predefined centroids to form clusters",
+                "It assigns points randomly when clusters are merged"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to Lecture 4 on ML, What similarity measure considers the two least similar points between clusters?",
+            options: [
+                "MAX or Complete Linkage",
+                "MIN or Single Linkage",
+                "Ward's Method",
+                "Group Average",
+                "Centroid Linkage"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to slides 11-14 in Lecture 12 on Weak Supervision, which class of functions provided by the Snorkel library can be used to augment training data for an image classification task?",
+            options: [
+                "Transformation Functions",
+                "Labeling Functions",
+                "Slicing Functions",
+                "Preprocessor Functions",
+                "Training Functions"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what is the main difference between Agglomerative (AGNES) and Divisive (DIANA) hierarchical clustering approaches?",
+            options: [
+                "AGNES starts with individual data points and merges them into clusters, while DIANA starts with one large cluster and splits it into smaller clusters",
+                "AGNES is computationally faster than DIANA in all cases",
+                "DIANA relies on centroid-based clustering, whereas AGNES uses density-based clustering",
+                "AGNES can only be used with continuous data, while DIANA can handle categorical data",
+                "DIANA is suitable for supervised learning tasks, whereas AGNES is used for unsupervised learning"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, Which programming technique does the edit distance algorithm primarily use to solve its recurrence relation?",
+            options: [
+                "Dynamic programming",
+                "Greedy algorithm",
+                "Divide and conquer",
+                "Backtracking",
+                "Non-deterministic Polynomial time"
+            ],
+            correct: 0
+        },
+        {
+            question: "In edit distance calculations, what makes the Levenshtein distance an effective similarity measure for text data, and what operations does it include?",
+            options: [
+                "The Levenshtein distance calculates the minimum number of single-character edits—insertions, deletions, and substitutions—required to transform one string into another, making it effective for comparing similar but non-identical text",
+                "The Levenshtein distance measures the Euclidean distance between character positions, helping determine the structural similarity of strings",
+                "The Levenshtein distance only considers deletions, which makes it ideal for comparing text documents with additional or missing sections",
+                "The Levenshtein distance uses binary encoding to measure the proportion of matched characters between two strings",
+                "The Levenshtein distance assesses the similarity of two strings based solely on the number of common words, making it ideal for comparing paragraphs"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the purpose of the Expectation and Maximization steps in the K-Means algorithm?",
+            options: [
+                "To assign data points to the nearest centroids and then update the centroids to the mean of the assigned points",
+                "To initialize the final cluster centers directly",
+                "To reduce the dimensionality of the data before clustering",
+                "To predict the next cluster center locations using a machine learning model",
+                "To remove outliers from the dataset before performing clustering"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, which of the following is an axiom of a distance measure?",
+            options: [
+                "d(x,y) = d(y,x) (distance is symmetric)",
+                "d(x,y) - d(y,z) ≤ d(x,z) (the inverse triangle inequality)",
+                "d(x,y) = 0 for all x",
+                "d(x,y) can be negative",
+                "All points x and y have a distance of 1"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture (ML Lecture 4), which of the following statements best describes a primary limitation of the MAX linkage method?",
+            options: [
+                "It tends to break large clusters during the merging process",
+                "It is heavily influenced by the average distance between all points in clusters",
+                "It can only handle binary data for clustering",
+                "It is less effective when clusters are globular in shape",
+                "It is sensitive to noise and outliers, leading to poor clustering results"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the primary benefit of using transformation functions (data augmentation) when preparing a labeled dataset for training a machine learning model?",
+            options: [
+                "To improve the model's robustness by introducing diverse, class-preserving variations of labeled data",
+                "To reassign labels to data points based on updated class definitions",
+                "To filter out low-quality data points from the training dataset",
+                "To create new classes within the dataset by transforming existing data",
+                "To reduce the dataset size by merging similar examples"
+            ],
+            correct: 0
+        },
+        {
+            question: "In DBSCAN (Density-Based Spatial Clustering of Applications with Noise), consider a point P in a dataset with minimum points (minPts) set to 5 and a neighborhood radius ϵ set to 1 unit. The following are true for point P: 1. P has exactly 5 points (including itself) within the ϵ-neighborhood. 2. The density-reachable points of P form a continuous cluster in the dataset. 3. One of the points within P's ϵ-neighborhood is noise (i.e., it has no neighbors within ϵ). Based on this, what type of point is P classified as?",
+            options: [
+                "Core point",
+                "Border point",
+                "Noise point", 
+                "Directly reachable point",
+                "Outlier"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which of the following is true about the DIANA (Divisive Analysis) clustering method?",
+            options: [
+                "DIANA uses a top-down approach and is implemented in packages like Splus",
+                "DIANA follows a agglomerative approach where it merges smaller clusters to form a larger one",
+                "It employs a bottom-up strategy and usually starts with individual data points",
+                "DIANA splits the clusters based on minimizing dissimilarity within its sub clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Clustering, in the context of Hierarchical Clustering, which of the following best describes the Ward's Linkage?",
+            options: [
+                "It minimizes the increment in variance within clusters when merging them",
+                "It calculates the maximum distance between all the points in different clusters when merging",
+                "It calculates the minimum distance between any two points in different clusters when merging",
+                "It merges the clusters based on the average distance between all the points in different clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "Given two points p = (3, 4, 5) and q=(1,1,1) in three-dimensional space, calculate the Euclidean distance between them.",
+            options: [
+                "√14",
+                "√27",
+                "√18",
+                "√30",
+                "√21"
+            ],
+            correct: 0
+        },
+        {
+            question: "Which of the following clustering methods is best suited to handle noise and outliers effectively?",
+            options: [
+                "DBSCAN",
+                "Hierarchical MIN",
+                "Hierarchical MAX",
+                "K-Means",
+                "Hierarchical Average"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture, which clustering method is best suited for finding clusters of arbitrary shapes and handling noise?",
+            options: [
+                "DBSCAN",
+                "Hierarchical clustering",
+                "K-means clustering",
+                "K-medoids clustering", 
+                "AGNES (Agglomerative Nesting)"
+            ],
+            correct: 0
+        },
+        {
+            question: "In supervised learning, which metric is most appropriate for evaluating a model's performance on a highly imbalanced binary classification dataset?",
+            options: [
+                "Precision-Recall AUC",
+                "Accuracy",
+                "Mean Squared Error",
+                "Adjusted Rand Index",
+                "Silhouette Score"
+            ],
+            correct: 0
+        },
+        {
+            question: "Which of the following methods is an unsupervised technique that can be used to reduce the dimensionality of word embeddings while preserving as much variance as possible?",
+            options: [
+                "Principal Component Analysis (PCA)",
+                "K-means clustering",
+                "Linear Discriminant Analysis (LDA)",
+                "Support Vector Machine (SVM)",
+                "Decision Trees"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the primary function of the Silhouette Coefficient in evaluating the quality of a clustering solution, and what does a higher Silhouette Coefficient indicate?",
+            options: [
+                "The Silhouette Coefficient measures both the cohesion within clusters and the separation between clusters, with a higher value indicating well-defined and distinct clusters",
+                "The Silhouette Coefficient exclusively measures the compactness of individual clusters, with a higher value indicating clusters are more compact",
+                "The Silhouette Coefficient is used to evaluate the consistency of cluster sizes across the dataset, with a higher value indicating more uniform clusters",
+                "The Silhouette Coefficient assesses the average distance between each data point and its assigned centroid, where a higher value indicates lower within-cluster distances",
+                "The Silhouette Coefficient only considers the separation between clusters, ignoring cohesion within clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the ML Lecture 4, which of the following statements about calculating edit distance using dynamic programming is correct?",
+            options: [
+                "The edit distance between two strings can be calculated using a 2D matrix, where each cell represents the minimum number of operations required to convert a substring of one string into a substring of the other string",
+                "The edit distance is always equal to the length of the longer string",
+                "The edit distance only considers substitutions, disregarding insertions and deletions",
+                "The edit distance calculation does not depend on the order of characters in the strings",
+                "The edit distance can be calculated by politely asking them to transform into each other"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which clustering method is best suited for finding clusters with spherical shapes but is sensitive to noise?",
+            options: [
+                "K-means clustering",
+                "Hierarchical clustering",
+                "DBSCAN",
+                "K-medoids clustering",
+                "AGNES (Agglomerative Nesting)"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture on Data Labeling, which of the following labeling function technique relies on finding specific syntactical patterns within data to create labels?",
+            options: [
+                "Pattern matching",
+                "Keyword searches",
+                "Distant supervision",
+                "Third-party models",
+                "Crowdworker labels"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the given edit distance algorithm, what is the value of D(i, j) when X(i) is equal to Y(j), where D(i, j) represents the minimum edit distance for matching the first i characters of X with the first j characters of Y?",
+            options: [
+                "D(i, j) = D(i-1, j-1) + 0",
+                "D(i, j) = D(i, j-1) + 1",
+                "D(i, j) = D(i-1, j) + 1",
+                "D(i, j) = D(i-1, j-1) + 2",
+                "D(i, j) = D(i, j) + 1"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on supervised learning, what is the main difference between classification and regression tasks?",
+            options: [
+                "Classification predicts discrete categories, while regression predicts continuous values",
+                "Classification uses neural networks, while regression uses decision trees",
+                "Classification is unsupervised, while regression is supervised",
+                "Classification works with numerical data, while regression works with categorical data",
+                "Classification requires more training data than regression"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what is a primary limitation of the k-means clustering algorithm?",
+            options: [
+                "It is sensitive to the initial placement of centroids",
+                "It requires data to be binary",
+                "It cannot be applied to numerical data",
+                "It requires hierarchical relationships between data points",
+                "It only works for density-based clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "Which similarity measure is best suited when the magnitude of the vectors is not important, focusing instead on the angle or direction between them?",
+            options: [
+                "Cosine",
+                "Jaccard",
+                "Euclidean Distance",
+                "Edit Distance",
+                "Simple Matching Coefficient (SMC)"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture on Distance Measures, in Jaccard similarity, what happens when the intersection of two sets is empty, and why?",
+            options: [
+                "The similarity score becomes zero because there are no common elements between the two sets",
+                "The similarity becomes undefined, as there's no way to calculate the union without intersection",
+                "The similarity score becomes one, as the absence of intersection implies complete independence",
+                "The similarity score depends only on the size of the union, irrelevant of the intersection size",
+                "The sets take it personally and hold a grudge for being complete opposites"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on clustering, what is the main objective of the K-Means clustering algorithm?",
+            options: [
+                "To minimize the within-cluster sum of squares (SSE)",
+                "To maximize the distance between all points in different clusters",
+                "To reduce the number of clusters by merging the least similar ones",
+                "To assign each point to the nearest core point based on density",
+                "To create clusters of equal sizes by iteratively adjusting the medoids"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture 13 on K-Medoids, what is the primary advantage of using the K-Medoids clustering method over K-Means?",
+            options: [
+                "It reduces the effect of outliers by using a central object instead of the mean",
+                "It allows for arbitrary-shaped clusters by focusing on density",
+                "It uses a proximity matrix to determine cluster membership",
+                "It is hierarchical and doesn't require a specified number of clusters",
+                "It calculates similarity using the Jaccard index"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, what property does the Euclidean distance measure rely on when calculating the distance between two points in a multi-dimensional space?",
+            options: [
+                "Taking the square root of the sum of squared differences between each coordinate",
+                "Summing the absolute differences between each point's coordinates",
+                "Calculating the ratio of the intersection to the union of two sets",
+                "Minimizing the number of changes required to match two strings",
+                "Calculating the angle between two vectors"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on distance measures (unsupervised learning), which of the following expressions correctly represents the Euclidean distance between two points in n-dimensional space?",
+            options: [
+                "√[∑(x2i – x1i)²]",
+                "|x2 - x1| + |y2 - y1|",
+                "∑(x2i + x1i)²", 
+                "∏(x2i - x1i)",
+                "√[∑(x2i * x1i)]"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture 13 on ML, Why is K-means clustering sensitive to outliers?",
+            options: [
+                "Outliers can change the position of cluster centers",
+                "Outliers are ignored by the K-means algorithm",
+                "Outliers make K-means run faster",
+                "Outliers always form their own clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, In hierarchical clustering, how is 'complete linkage' used to determine the similarity between clusters?",
+            options: [
+                "It uses the two most dissimilar points in different clusters",
+                "It takes the average of all points in both clusters",
+                "It uses only the centroids of each cluster",
+                "It relies on the smallest distance between points in the clusters",
+                "It calculates the similarity by minimizing the number of clusters"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which clustering algorithm is sensitive to the choice of initial centroids and aims to minimize the within-cluster sum of squares?",
+            options: [
+                "K-Means",
+                "DBSCAN",
+                "Hierarchical Clustering",
+                "Agglomerative Clustering"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Jaccard Similarity, which best describes the formula for calculating the Jaccard Similarity (or Intersection over Union, IoU) between two binary vectors c1 and c2?",
+            options: [
+            "sim(C1,C2)=|C1∩C2|/|C1∪C2|",
+            "sim(C1,C2)=|C1∪C2|/|C1∩C2|", 
+            "sim(C1,C2)=|C1+C2|-|C1-C2|",
+            "sim(C1,C2)=|C1-C2|/|C1∪C2|",
+            "sim(C1,C2)=|C1∩C2∩C3|/|C1∪C2∪C3|"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Machine Learning - Supervised and Unsupervised Classification, which best describes the role of embeddings in supervised machine learning?",
+            options: [
+                "Embeddings transform high-dimensional data into a lower-dimensional vector space, preserving important semantic relationships for analysis",
+                "Embeddings label data points in an unsupervised way based on their similarity scores",
+                "Embeddings categorize data points into predefined classes to improve model accuracy",
+                "Embeddings generate new features by clustering data into high-density areas",
+                "Embeddings remove noise by ignoring all non-numeric features"
+            ],
+            correct: 0
+        },
+        {
+            question: "Which best describes the role of transformation functions in weak supervision?",
+            options: [
+                "To increase the size of labeled training data by creating variations of labeled data points",
+                "To refine existing labels by comparing with external class labels",
+                "To segment a dataset based on specific rules for grouping similar data",
+                "To correct noisy labels by using a set of high-quality labeled data",
+                "To divide the dataset into overlapping buckets based on projection vectors"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture slides, which distance measure is calculated by counting the minimum number of edits needed to transform one string into another?",
+            options: [
+                "Edit distance",
+                "Cosine distance",
+                "Euclidean distance",
+                "Manhattan distance",
+                "Hopping on one foot while chanting"
+            ],
+            correct: 0
+        },
+        {
+            question: "In a machine learning project employing weak supervision with Snorkel, what is the recommended method to address and improve the inconsistency in labels derived from various high-level or noisy sources?",
+            options: [
+                "Continuously evaluate and refine the labeling functions based on their performance on the training set to balance accuracy and coverage",
+                "Focus exclusively on the highest quality labels from the most consistent single source to maintain label integrity",
+                "Use transformation functions to standardize data inputs before applying labeling functions to ensure uniform label application",
+                "Increase the complexity and specificity of labeling functions to reduce the influence of noisy data"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Distance measures, which of the following is NOT an axiom that a distance measure must satisfy?",
+            options: [
+                "If x ≠ y then d(x,y) > 0",
+                "Distance is symmetric",
+                "The triangle inequality",
+                "All distances are positive",
+                "Distances are zero only if points are identical"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the Advanced Machine Learning lecture, which type of model is particularly mentioned for effectively dealing with sequence data?",
+            options: [
+                "Recurrent Neural Networks (RNNs)",
+                "Convolutional Neural Networks (CNNs)",
+                "Support Vector Machines (SVMs)",
+                "Decision Trees"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture, which of the following is not a property of a valid distance measure?",
+            options: [
+                "Dependence on data distribution",
+                "Symmetry",
+                "Triangle inequality",
+                "Non-negativity",
+                "Zero distance for identical points"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the minimal edit distance required to transform the word 'flaw' into the word 'lawn'?",
+            options: [
+                "2",
+                "3",
+                "4",
+                "5",
+                "1"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to lecture13-ml-lecture-part3.pdf by Dr.Grant, which best describes the primary purpose of the cosine similarity metric in machine learning?",
+            options: [
+                "To measure the similarity between two vectors based on their orientation, while ignoring their magnitude, often used in text analysis and recommendation systems",
+                "To calculate the exact distance between two points in space, making it ideal for clustering and distance-based algorithms",
+                "To compare the pixel intensities in image classification tasks by focusing on color variation",
+                "To find matching binary values between two vectors, often used in binary classification problems"
+            ],
+            correct: 0
+        },
+        {
+            question: "What is the primary purpose of Locally Sensitive Hashing (LSH) in machine learning?",
+            options: [
+                "To group similar data points efficiently based on their hashed values",
+                "To create new labels by combining known labeled and unlabeled data",
+                "To improve the accuracy of weak supervision by using noisy data sources",
+                "To generate approximate labels for high-dimensional data",
+                "To increase the training data size through augmentation techniques"
+            ],
+            correct: 0
+        },
+        {
+            question: "Which of the following indices is used to evaluate the clustering structure based on external class labels?",
+            options: [
+                "External Index",
+                "Internal Index",
+                "Relative Index",
+                "Sum of Squared Error (SSE)",
+                "Euclidean Distance"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the discussion of cluster validity, what is the primary purpose of evaluating clustering results?",
+            options: [
+                "To avoid finding patterns in noise",
+                "To determine the overall accuracy of supervised models",
+                "To eliminate the need for external class labels in analysis",
+                "To reduce the dimensionality of the dataset",
+                "To avoid testing different clustering algorithms"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Distance measures, in which of the following scenarios would cosine similarity be most appropriate to use?",
+            options: [
+                "Comparing the similarity between two text documents based on their word usage",
+                "Calculating the distance between two points in a geographic coordinate system",
+                "Finding the correlation between two variables in a dataset",
+                "Measuring the probability of one event given another event has occurred",
+                "Calculating the total sales of two stores in a given period"
+            ],
+            correct: 0
+        },
+        {
+            question: "In unsupervised learning, which technique is primarily used to group data points based on their similarities?",
+            options: [
+                "Clustering",
+                "Supervised classification",
+                "Regression",
+                "Edit distance"
+            ],
+            correct: 0
+        },
+        {
+            question: "According to the lecture on Supervised Learning, under the Data labeling approach, what is the primary purpose of Weak Supervision in machine learning?",
+            options: [
+                "To combine high-level or noisy sources of labeling to get more labels",
+                "To use pre-labeled data to achieve perfect label accuracy",
+                "To create high-quality labels by manually labeling each data point",
+                "To enhance the accuracy of labels through data slicing techniques",
+                "To transform unlabeled data into fully supervised datasets"
+            ],
+            correct: 0
+        }
+
+    ];
+
+        let score = 0;
+        let answeredQuestions = 0;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function displayQuiz() {
+            const quizContainer = document.getElementById('quiz');
+            // Shuffle the questions
+            const shuffledQuestions = shuffleArray([...quizData]);
+            
+            shuffledQuestions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question';
+                
+                const shuffledOptions = shuffleArray([...question.options]);
+                const correctAnswer = question.options[question.correct];
+                const correctIndex = shuffledOptions.indexOf(correctAnswer);
+
+                questionDiv.innerHTML = `
+                    <p><strong>Question ${index + 1}:</strong> ${question.question}</p>
+                    <div class="options">
+                        ${shuffledOptions.map((option, i) => `
+                            <div class="option" data-correct="${i === correctIndex}">
+                                ${option}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                quizContainer.appendChild(questionDiv);
+            });
+
+            updateProgress();
+
+            // Add click event listeners to options
+            document.querySelectorAll('.option').forEach(option => {
+                option.addEventListener('click', function() {
+                    if (!this.classList.contains('correct') && !this.classList.contains('incorrect')) {
+                        const isCorrect = this.dataset.correct === 'true';
+                        this.classList.add(isCorrect ? 'correct' : 'incorrect');
+                        
+                        if (!isCorrect) {
+                            const siblings = this.parentElement.children;
+                            Array.from(siblings).forEach(sib => {
+                                if (sib.dataset.correct === 'true') {
+                                    sib.classList.add('correct');
+                                }
+                            });
+                        }
+
+                        if (isCorrect) score++;
+                        answeredQuestions++;
+                        
+                        const siblings = this.parentElement.children;
+                        Array.from(siblings).forEach(sib => {
+                            sib.style.pointerEvents = 'none';
+                        });
+
+                        updateScore();
+                        updateProgress();
+                    }
+                });
+            });
+        }
+
+        function updateScore() {
+            const percentage = Math.round((score / answeredQuestions) * 100);
+            document.getElementById('score').innerHTML = 
+                `Score: ${score}/${answeredQuestions} (${percentage}%)`;
+        }
+
+        function updateProgress() {
+            document.getElementById('progress').textContent = 
+                `${answeredQuestions}/${quizData.length}`;
+        }
+
+        // Initialize quiz
+        displayQuiz();
+    </script>
+</body>
+</html>ç
